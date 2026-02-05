@@ -3,6 +3,7 @@ import requests
 import json
 import os
 from flask import Flask, request, jsonify
+from interface import get_chat_html
 
 app = Flask(__name__)
 
@@ -123,7 +124,7 @@ def run_sales_agent(user_message):
 
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def sales_agent():
-    """Sales agent endpoint"""
+    """Sales agent endpoint and UI"""
     
     # Enable CORS
     if request.method == 'OPTIONS':
@@ -134,6 +135,10 @@ def sales_agent():
         }
         return ('', 204, headers)
     
+    # If GET request with no question parameter, serve HTML UI
+    if request.method == 'GET' and not request.args.get('question'):
+        return get_chat_html()
+    
     try:
         # Get question from request
         if request.method == 'POST':
@@ -143,7 +148,7 @@ def sales_agent():
             question = request.args.get('question')
         
         if not question:
-            return jsonify({"error": "No question provided. Use ?question=Your question here"}), 400
+            return jsonify({"error": "No question provided"}), 400
         
         # Run the agent
         response = run_sales_agent(question)
