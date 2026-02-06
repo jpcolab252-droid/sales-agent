@@ -7,8 +7,10 @@ from flask import Flask, request, jsonify
 # Try to import vector_search, but don't fail if missing
 try:
     from vector_search import search_products_by_vector
-except ImportError as e:
-    print(f"Warning: Could not import vector_search: {e}")
+    VECTOR_SEARCH_ERROR = None
+except Exception as e:
+    print(f"Error importing vector_search: {e}")
+    VECTOR_SEARCH_ERROR = str(e)
     search_products_by_vector = None
 
 app = Flask(__name__)
@@ -116,11 +118,13 @@ def sales_agent(user_message):
     
     logs.append("🟢 Agent started")
     if search_products_by_vector is None:
-        logs.append("⚠️  Using DUMMY PRODUCT DATA (vector_search not available)")
+        logs.append(f"⚠️  Using DUMMY PRODUCT DATA")
+        if VECTOR_SEARCH_ERROR:
+            logs.append(f"   Error: {VECTOR_SEARCH_ERROR}")
     else:
         logs.append("✅ Using REAL VECTOR SEARCH")
     logs.append(f"📝 Question: {user_message}")
-    
+   
     # Load system prompt
     system_prompt = load_system_prompt()
     
