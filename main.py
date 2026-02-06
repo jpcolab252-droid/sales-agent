@@ -136,7 +136,7 @@ def sales_agent(user_message):
         logs.append(f"🔄 Loop {loop_count}: Calling Claude...")
         
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-5-20250929",
             max_tokens=1024,
             system=system_prompt,
             tools=tools,
