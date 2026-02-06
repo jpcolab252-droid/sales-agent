@@ -3,7 +3,13 @@ import requests
 import json
 import os
 from flask import Flask, request, jsonify
-from vector_search import search_products_by_vector
+
+# Try to import vector_search, but don't fail if missing
+try:
+    from vector_search import search_products_by_vector
+except ImportError as e:
+    print(f"Warning: Could not import vector_search: {e}")
+    search_products_by_vector = None
 
 app = Flask(__name__)
 
@@ -53,9 +59,21 @@ tools = [
 
 def search_products_tool(query, num_results=5):
     """Search products using vector search"""
+    if search_products_by_vector is None:
+        # Return dummy data if vector_search not available
+        print("[DUMMY DATA] vector_search not available, using mock results")
+        return {
+            "status": "success", 
+            "results": [
+                {"name": "Ceramic Guard Ultra", "price": 89.0, "match": 0.8},
+                {"name": "Engine Cleaner MV40", "price": 34.50, "match": 0.7}
+            ],
+            "note": "[DUMMY DATA]"
+        }
+    
     try:
         results = search_products_by_vector(query, num_results)
-        return {"status": "success", "results": results}
+        return {"status": "success", "results": results, "note": "[REAL DATA]"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -79,7 +97,8 @@ def process_tool_call(tool_name, tool_input, logs):
             tool_input.get("query"),
             tool_input.get("num_results", 5)
         )
-        logs.append(f"✓ Got {len(result.get('results', []))} results")
+        data_type = result.get("note", "unknown")
+        logs.append(f"✓ Got {len(result.get('results', []))} results {data_type}")
         return result
     elif tool_name == "get_current_inventory":
         logs.append(f"🔧 Calling get_current_inventory for: '{tool_input.get('product_name')}'")
@@ -96,6 +115,10 @@ def sales_agent(user_message):
     logs = []
     
     logs.append("🟢 Agent started")
+    if search_products_by_vector is None:
+        logs.append("⚠️  Using DUMMY PRODUCT DATA (vector_search not available)")
+    else:
+        logs.append("✅ Using REAL VECTOR SEARCH")
     logs.append(f"📝 Question: {user_message}")
     
     # Load system prompt
