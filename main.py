@@ -15,7 +15,6 @@ except Exception as e:
 
 app = Flask(__name__)
 
-
 # Configuration
 SHEET_API_URL = "https://script.google.com/macros/s/AKfycbx4QRKcj_ikDiBVI4TtxXsg_72BGQn28HpRjOahYfeAW34CyyZ9zvcSP9_jQzsb3OIyBg/exec"
 SHEET_TOKEN = "pRjOahYfeAW34CyyZ9zvcSP9"
@@ -100,8 +99,12 @@ def process_tool_call(tool_name, tool_input, logs):
             tool_input.get("query"),
             tool_input.get("num_results", 5)
         )
-        data_type = result.get("note", "unknown")
-        logs.append(f"✓ Got {len(result.get('results', []))} results {data_type}")
+        
+        if result.get("status") == "error":
+            logs.append(f"❌ Error: {result.get('message')}")
+        else:
+            data_type = result.get("note", "unknown")
+            logs.append(f"✓ Got {len(result.get('results', []))} results {data_type}")
         return result
     elif tool_name == "get_current_inventory":
         logs.append(f"🔧 Calling get_current_inventory for: '{tool_input.get('product_name')}'")
@@ -125,7 +128,7 @@ def sales_agent(user_message):
     else:
         logs.append("✅ Using REAL VECTOR SEARCH")
     logs.append(f"📝 Question: {user_message}")
-   
+    
     # Load system prompt
     system_prompt = load_system_prompt()
     
